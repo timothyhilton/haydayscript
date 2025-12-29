@@ -4,17 +4,38 @@ from pathlib import Path
 
 pyautogui.FAILSAFE = True
 
+advertiseButtonOffset = 100
+
+harvestSpeed = 1
 relativeHarvestPoints = [
-    (70, 7),       # Point 1 -> 2
-    (113, 69),     # Point 2 -> 3
-    (75, -40),     # Point 3 -> 4
-    (-90, -48),    # Point 4 -> 5
-    (-60, 31),     # Point 5 -> 6
-    (74, 38),      # Point 6 -> 7
-    (42, -24),     # Point 7 -> 8
-    (-58, -29),    # Point 8 -> 9
-    (-26, 14),     # Point 9 -> 10
-    (54, 31)       # Point 10 -> 11
+    (63, 11),   # Point 1 -> 2
+    (117, 64),  # Point 2 -> 3
+    (16, -9),   # Point 3 -> 4
+    (-91, -44), # Point 4 -> 5
+    (18, -8),   # Point 5 -> 6
+    (88, 45),   # Point 6 -> 7
+    (12, -9),   # Point 7 -> 8
+    (-86, -42), # Point 8 -> 9
+    (16, -9),   # Point 9 -> 10
+    (88, 43),   # Point 10 -> 11
+    (19, -5),   # Point 11 -> 12
+    (-95, -46)  # Point 12 -> 13
+]
+
+plantSpeed = 1
+relativePlantPoints = [
+    (-29, 42),    # 1 -> 2
+    (116, 61),    # 2 -> 3
+    (15, -8),     # 3 -> 4
+    (-90, -47),   # 4 -> 5
+    (14, -5),     # 5 -> 6
+    (91, 45),     # 6 -> 7
+    (15, -9),     # 7 -> 8
+    (-90, -43),   # 8 -> 9
+    (15, -7),     # 9 -> 10
+    (91, 46),     # 10 -> 11
+    (12, -10),    # 11 -> 12
+    (-88, -45)    # 12 -> 13
 ]
 
 print("beginning in 3 seconds")
@@ -54,34 +75,127 @@ def attemptReset():
     time.sleep(1)
     pyautogui.click()
 
+def runHarvest():
+    ready = getImgLoc("wheat/ready")
+    if(ready):
+        pyautogui.moveTo(ready)
+        time.sleep(0.1)
+        pyautogui.click()
+        time.sleep(2)
+        sycthe = getImgLoc("wheat/scythe", confidence=0.8)
+        if(sycthe == None):
+            print("sycthe not found")
+            attemptReset()
+            return False
+        
+        pyautogui.moveTo(sycthe)
+
+        pyautogui.mouseDown(_pause=False, button='primary')
+        for point in relativeHarvestPoints:
+            distance = (point[0] ** 2 + point[1] ** 2) ** 0.5
+            duration = distance * 0.01 * harvestSpeed
+            pyautogui.dragRel(point[0], point[1], duration=duration, mouseDownUp=False, button='left')
+        pyautogui.mouseUp(_pause=False, button='primary')
+
+def runPlant():
+    plant = getImgLoc("wheat/plant")
+
+    if(plant == None):
+        return False
+    
+    pyautogui.moveTo(plant)
+    time.sleep(0.1)
+    pyautogui.click()
+    time.sleep(2)
+    drag = getImgLoc("wheat/drag", confidence=0.8)
+    if(drag == None):
+        print("wheat to drag not found")
+        attemptReset()
+        return False
+
+    pyautogui.moveTo(drag)
+
+    pyautogui.mouseDown(_pause=False, button='primary')
+    for point in relativePlantPoints:
+        distance = (point[0] ** 2 + point[1] ** 2) ** 0.5
+        duration = distance * 0.01 * plantSpeed
+        pyautogui.dragRel(point[0], point[1], duration=duration, mouseDownUp=False, button='left')
+    pyautogui.mouseUp(_pause=False, button='primary')
+
+    attemptReset()
+
+def handleSelling():
+    pyautogui.moveTo(getImgLoc("misc/closemenu"))
+    pyautogui.click()
+    time.sleep(0.7)
+    pyautogui.moveTo(getImgLoc("shop/open"))
+    pyautogui.click()
+
+    while(getImgLoc("shop/sold")):
+        pyautogui.moveTo(getImgLoc("shop/sold"))
+        pyautogui.click()
+        time.sleep(0.7)
+    
+    while(getImgLoc("shop/createnew")):
+        pyautogui.moveTo(getImgLoc("shop/createnew"))
+        pyautogui.click()
+        time.sleep(0.5)
+        pyautogui.moveTo(getImgLoc("shop/wheattosell"))
+        pyautogui.click()
+        time.sleep(0.3)
+        pyautogui.moveTo(getImgLoc("shop/maxprice"))
+        pyautogui.click()
+        time.sleep(0.3)
+        pyautogui.moveTo(getImgLoc("shop/putonsale"))
+        pyautogui.click()
+        time.sleep(0.3)
+
+    wheattoadvert = getImgLoc("shop/wheattoadvert")
+    if(wheattoadvert):
+        pyautogui.moveTo(wheattoadvert)
+        pyautogui.click()
+        time.sleep(0.3)
+        ad = getImgLoc("shop/advertisenow")
+        if(ad):
+            pyautogui.moveTo(ad[0] + advertiseButtonOffset, ad[1])
+            pyautogui.click()
+            time.sleep(0.3)
+            pyautogui.moveTo(getImgLoc("shop/createad"))
+            pyautogui.click()
+            time.sleep(0.3)
+            
+            pyautogui.moveTo(getImgLoc("misc/closemenu"))
+            pyautogui.click()
+        else:
+            pyautogui.moveTo("misc/closemenu")
+            pyautogui.click()
+    
+    time.sleep(0.3)
+    
+    
+    
+
 def main():
     while(1):
-        if(getImgLoc("misc/homecheck", confidence=0.7) == None):
+        sellingNeeded = getImgLoc("shop/silofull")
+        if(sellingNeeded):
+            handleSelling()
+
+        if(getImgLoc("misc/homecheck", confidence=0.95) == None):
             print("ruh roh")
-        else:
-            ready = getImgLoc("wheat/ready")
-            if(ready):
-                pyautogui.moveTo(ready)
-                time.sleep(0.1)
-                pyautogui.click()
-                time.sleep(2)
-                sycthe = getImgLoc("wheat/scythe", confidence=0.8)
-                if(sycthe == None):
-                    print("sycthe not found")
-                    attemptReset()
-                    continue
-                
-                pyautogui.moveTo(sycthe)
+            attemptReset()
+            continue
 
-                pyautogui.mouseDown(_pause=False, button='primary')
-                for point in relativeHarvestPoints:
-                    distance = (point[0] ** 2 + point[1] ** 2) ** 0.5
-                    # e.g. 0.005 seconds per pixel, clamp to 0.05 minimum
-                    duration = distance * 0.02
-                    pyautogui.dragRel(point[0], point[1], duration=duration, mouseDownUp=False, button='left')
-                pyautogui.mouseUp(_pause=False, button='primary')
+        harvest = runHarvest()
+        # if(harvest == False):
+        #     continue
 
-        time.sleep(0.1)
+        plant = runPlant()
+        # if(plant == False):
+        #     continue
+        
+
+
 
 main()
 

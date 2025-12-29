@@ -21,7 +21,7 @@ img_w, img_h = screenshot.size
 scale = img_w / screen_w_pts
 print(f"Detected Scale Factor: {scale}x")
 
-crop_size = 40
+crop_size = 50
 crop_x = int(x * scale) - (crop_size // 2)
 crop_y = int(y * scale) - (crop_size // 2)
 crop_x = max(0, crop_x)
