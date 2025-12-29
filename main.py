@@ -6,36 +6,71 @@ pyautogui.FAILSAFE = True
 
 advertiseButtonOffset = 100
 
-harvestSpeed = 1
+harvestSpeed = 0.3
 relativeHarvestPoints = [
-    (63, 11),   # Point 1 -> 2
-    (117, 64),  # Point 2 -> 3
-    (16, -9),   # Point 3 -> 4
-    (-91, -44), # Point 4 -> 5
-    (18, -8),   # Point 5 -> 6
-    (88, 45),   # Point 6 -> 7
-    (12, -9),   # Point 7 -> 8
-    (-86, -42), # Point 8 -> 9
-    (16, -9),   # Point 9 -> 10
-    (88, 43),   # Point 10 -> 11
-    (19, -5),   # Point 11 -> 12
-    (-95, -46)  # Point 12 -> 13
+    (63, -19),
+    (51, 31),
+    (-40, 21),
+    (118, 62),
+    (12, -8),
+    (-119, -63),
+    (10, -6),
+    (110, 63),
+    (8, -5),
+    (-118, -62),
+    (8, -6),
+    (114, 67),
+    (5, -6),
+    (-115, -66),
+    (12, -4),
+    (116, 68),
+    (9, -4),
+    (-125, -67),
+    (8, -5),
+    (121, 66),
+    (11, -2),
+    (-133, -74),
+    (12, -4),
+    (129, 74),
+    (12, -4),
+    (-136, -73),
+    (7, -6),
+    (133, 70),
+    (-240, -15),
+    (32, -20),
+    (12, 16),
+    (-29, -4)
 ]
 
-plantSpeed = 1
+plantSpeed = 0.3
 relativePlantPoints = [
-    (-29, 42),    # 1 -> 2
-    (116, 61),    # 2 -> 3
-    (15, -8),     # 3 -> 4
-    (-90, -47),   # 4 -> 5
-    (14, -5),     # 5 -> 6
-    (91, 45),     # 6 -> 7
-    (15, -9),     # 7 -> 8
-    (-90, -43),   # 8 -> 9
-    (15, -7),     # 9 -> 10
-    (91, 46),     # 10 -> 11
-    (12, -10),    # 11 -> 12
-    (-88, -45)    # 12 -> 13
+    (-22, 45),
+    (136, 69),
+    (3, -3),
+    (-133, -70),
+    (5, -9),
+    (138, 74),
+    (6, -5),
+    (-98, -53),
+    (7, -9),
+    (101, 59),
+    (18, -6),
+    (-122, -65),
+    (9, -3),
+    (122, 61),
+    (11, -6),
+    (-131, -62),
+    (11, -6),
+    (126, 73),
+    (11, -4),
+    (-136, -74),
+    (9, -5),
+    (131, 74),
+    (8, -5),
+    (-129, -64),
+    (8, -9),
+    (124, 63),
+    (-96, 55),
 ]
 
 print("beginning in 3 seconds")
@@ -56,63 +91,86 @@ def getImgLoc(directory, confidence=0.9, grayscale=False):
             location = pyautogui.locateCenterOnScreen(str(image_file), confidence=confidence, grayscale=grayscale)
             if location:
                 x, y = location
-                target_x = x / 2
-                target_y = y / 2
-                return (target_x, target_y)
+                return (x / 2, y / 2)
         except Exception as e:
             pass
     return None
 
+def closeAllMenus():
+    while True:
+        closemenu = getImgLoc("misc/closemenu")
+        if closemenu:
+            print("closing menu")
+            pyautogui.click(closemenu)
+            time.sleep(0.3)
+        else:
+            break
+
 def attemptReset():
+    print("resetting view")
     reset = getImgLoc("misc/reset", confidence=0.8)
-    if(reset == None): input("check state, press enter to continue")
-    pyautogui.moveTo(getImgLoc("misc/reset", confidence=0.8))
-    time.sleep(0.1)
-    pyautogui.click()
+    if reset == None: 
+        print("reset button not found, manual help needed")
+        input("check state, press enter to continue")
+        reset = getImgLoc("misc/reset", confidence=0.8)
+    print("clicking first reset")
+    pyautogui.click(reset)
+    time.sleep(0.5)
     reset = getImgLoc("misc/reset", confidence=0.8)
-    if(reset == None): input("check state, press enter to continue")
-    pyautogui.moveTo(getImgLoc("misc/reset", confidence=0.8))
-    time.sleep(1)
-    pyautogui.click()
+    if reset == None: 
+        print("reset button not found after first click")
+        input("check state, press enter to continue")
+        reset = getImgLoc("misc/reset", confidence=0.8)
+    print("clicking second reset")
+    time.sleep(0.5)
+    pyautogui.click(reset)
+    print("reset done")
 
 def runHarvest():
+    print("checking for ready wheat")
     ready = getImgLoc("wheat/ready")
-    if(ready):
-        pyautogui.moveTo(ready)
-        time.sleep(0.1)
-        pyautogui.click()
-        time.sleep(2)
-        sycthe = getImgLoc("wheat/scythe", confidence=0.8)
-        if(sycthe == None):
-            print("sycthe not found")
+    if ready:
+        print("found wheat, clicking")
+        pyautogui.click(ready)
+        time.sleep(1)
+        scythe = getImgLoc("wheat/scythe", confidence=0.8)
+        if scythe == None:
+            print("scythe not found, resetting")
             attemptReset()
             return False
-        
-        pyautogui.moveTo(sycthe)
 
+        print("harvesting")
+        pyautogui.moveTo(scythe)
         pyautogui.mouseDown(_pause=False, button='primary')
         for point in relativeHarvestPoints:
             distance = (point[0] ** 2 + point[1] ** 2) ** 0.5
             duration = distance * 0.01 * harvestSpeed
-            pyautogui.dragRel(point[0], point[1], duration=duration, mouseDownUp=False, button='left')
+            pyautogui.dragRel(point[0], point[1], duration=duration, mouseDownUp=False, button='left', _pause=False)
         pyautogui.mouseUp(_pause=False, button='primary')
+        print("harvest done")
+        return True
+    else:
+        print("no wheat ready")
+        return False
 
 def runPlant():
+    print("checking for empty plots")
     plant = getImgLoc("wheat/plant")
 
-    if(plant == None):
+    if plant == None:
+        print("no empty plots found")
         return False
-    
-    pyautogui.moveTo(plant)
-    time.sleep(0.1)
-    pyautogui.click()
-    time.sleep(2)
+
+    print("found empty plot, clicking")
+    pyautogui.click(plant)
+    time.sleep(1)
     drag = getImgLoc("wheat/drag", confidence=0.8)
-    if(drag == None):
-        print("wheat to drag not found")
+    if drag == None:
+        print("wheat to drag not found, resetting")
         attemptReset()
         return False
 
+    print("planting wheat")
     pyautogui.moveTo(drag)
 
     pyautogui.mouseDown(_pause=False, button='primary')
@@ -122,80 +180,104 @@ def runPlant():
         pyautogui.dragRel(point[0], point[1], duration=duration, mouseDownUp=False, button='left')
     pyautogui.mouseUp(_pause=False, button='primary')
 
+    print("planting done, resetting")
     attemptReset()
+    return True
 
 def handleSelling():
-    pyautogui.moveTo(getImgLoc("misc/closemenu"))
-    pyautogui.click()
-    time.sleep(0.7)
-    pyautogui.moveTo(getImgLoc("shop/open"))
-    pyautogui.click()
-
-    while(getImgLoc("shop/sold")):
-        pyautogui.moveTo(getImgLoc("shop/sold"))
-        pyautogui.click()
-        time.sleep(0.7)
+    print("handling sales")
+    closemenu = getImgLoc("misc/closemenu")
+    if closemenu:
+        pyautogui.click(closemenu)
+        time.sleep(0.4)
     
-    while(getImgLoc("shop/createnew")):
-        pyautogui.moveTo(getImgLoc("shop/createnew"))
-        pyautogui.click()
-        time.sleep(0.5)
-        pyautogui.moveTo(getImgLoc("shop/wheattosell"))
-        pyautogui.click()
+    print("opening shop")
+    shop = getImgLoc("shop/open")
+    if shop:
+        pyautogui.click(shop)
+        time.sleep(0.4)
+
+    soldItems = []
+    try:
+        found = pyautogui.locateAllOnScreen("./assets/shop/sold/sold.png", confidence=0.9)
+        for box in found:
+            x, y = pyautogui.center(box)
+            pos = (x / 2, y / 2)
+            if not any(abs(pos[0] - p[0]) < 30 and abs(pos[1] - p[1]) < 30 for p in soldItems):
+                soldItems.append(pos)
+    except Exception as e:
+        pass
+    
+    if soldItems:
+        print(f"collecting {len(soldItems)} sold items")
+        for sold in soldItems:
+            pyautogui.click(sold)
+            time.sleep(0.05)
+
+    while getImgLoc("shop/createnew"):
+        createnew = getImgLoc("shop/createnew")
+        print("creating new sale")
+        pyautogui.click(createnew)
         time.sleep(0.3)
-        pyautogui.moveTo(getImgLoc("shop/maxprice"))
-        pyautogui.click()
-        time.sleep(0.3)
-        pyautogui.moveTo(getImgLoc("shop/putonsale"))
-        pyautogui.click()
-        time.sleep(0.3)
+        wheat = getImgLoc("shop/wheattosell")
+        if not wheat:
+            break
+        pyautogui.click(wheat)
+        time.sleep(0.1)
+        maxprice = getImgLoc("shop/maxprice")
+        if maxprice:
+            pyautogui.click(maxprice)
+            time.sleep(0.1)
+        sale = getImgLoc("shop/putonsale")
+        if sale:
+            pyautogui.click(sale)
+            time.sleep(0.1)
+        print("sale created")
 
     wheattoadvert = getImgLoc("shop/wheattoadvert")
-    if(wheattoadvert):
-        pyautogui.moveTo(wheattoadvert)
-        pyautogui.click()
-        time.sleep(0.3)
+    if wheattoadvert:
+        print("advertising wheat sale")
+        pyautogui.click(wheattoadvert)
+        time.sleep(0.1)
         ad = getImgLoc("shop/advertisenow")
-        if(ad):
-            pyautogui.moveTo(ad[0] + advertiseButtonOffset, ad[1])
-            pyautogui.click()
-            time.sleep(0.3)
-            pyautogui.moveTo(getImgLoc("shop/createad"))
-            pyautogui.click()
-            time.sleep(0.3)
-            
-            pyautogui.moveTo(getImgLoc("misc/closemenu"))
-            pyautogui.click()
+        if ad:
+            pyautogui.click(ad[0] + advertiseButtonOffset, ad[1])
+            time.sleep(0.2)
+            createad = getImgLoc("shop/createad")
+            if createad:
+                pyautogui.click(createad)
+                time.sleep(0.2)
+            print("ad placed, closing shop")
+            closemenu = getImgLoc("misc/closemenu")
+            if closemenu:
+                pyautogui.click(closemenu)
         else:
-            pyautogui.moveTo("misc/closemenu")
-            pyautogui.click()
-    
-    time.sleep(0.3)
-    
-    
-    
+            print("advertise button not found, closing")
+            closemenu = getImgLoc("misc/closemenu")
+            if closemenu:
+                pyautogui.click(closemenu)
+    else:
+        print("no wheat to advertise")
+
+    time.sleep(0.2)
 
 def main():
-    while(1):
-        sellingNeeded = getImgLoc("shop/silofull")
-        if(sellingNeeded):
+    loop_count = 0
+    while 1:
+        loop_count += 1
+        print(f"loop {loop_count} at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        silofull = getImgLoc("shop/silofull")
+        if silofull:
+            print("silo full, selling")
             handleSelling()
 
-        if(getImgLoc("misc/homecheck", confidence=0.95) == None):
-            print("ruh roh")
-            attemptReset()
-            continue
+        closeAllMenus()
+        runHarvest()
+        runPlant()
 
-        harvest = runHarvest()
-        # if(harvest == False):
-        #     continue
-
-        plant = runPlant()
-        # if(plant == False):
-        #     continue
-        
-
+        print("loop done, waiting")
+        time.sleep(0.5)
 
 
 main()
-
