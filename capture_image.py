@@ -1,8 +1,10 @@
 import pyautogui
 import time
+from pathlib import Path
 
 print("1. Open your game/app.")
 print("2. Move your mouse EXACTLY over the target button.")
+subdir = input("Enter subfolder under assets (ex: wheat/ready), blank for root: ").strip().strip("/")
 image_name = input("Enter a name for the image (without extension): ").strip()
 if not image_name:
     image_name = "new"
@@ -28,6 +30,10 @@ crop_x = max(0, crop_x)
 crop_y = max(0, crop_y)
 
 button_img = screenshot.crop((crop_x, crop_y, crop_x + crop_size, crop_y + crop_size))
-button_img.save(f'./assets/{image_name}.png')
+assets_dir = Path(__file__).resolve().parent / "assets"
+target_dir = assets_dir / subdir if subdir else assets_dir
+target_dir.mkdir(parents=True, exist_ok=True)
+out_path = target_dir / f"{image_name}.png"
+button_img.save(str(out_path))
 
-print(f"Image saved as './assets/{image_name}.png'. Check this image before using it as a locator.")
+print(f"Image saved as '{out_path}'. Check this image before using it as a locator.")
