@@ -216,12 +216,12 @@ def handleSelling():
     shop = getImgLoc("shop/open")
     if shop:
         pyautogui.click(shop)
+    time.sleep(0.5)
 
     soldItems = []
     try:
         sold_path = str(ASSETS_DIR / "shop/sold/sold.png")
-        found = pyautogui.locateAllOnScreen(sold_path, confidence=0.9)
-        for box in found:
+        for box in pyautogui.locateAllOnScreen(sold_path, confidence=0.9):
             x, y = pyautogui.center(box)
             pos = (x / SCALE_FACTOR, y / SCALE_FACTOR)
             if not any(abs(pos[0] - p[0]) < 30 and abs(pos[1] - p[1]) < 30 for p in soldItems):
@@ -233,24 +233,83 @@ def handleSelling():
         print(f"collecting {len(soldItems)} sold items")
         for sold in soldItems:
             pyautogui.click(sold)
+        time.sleep(1)
 
+    cachedClicks = None
+    pass_num = 0
+    max_passes = 4
     while True:
-        createnew = getImgLoc("shop/createnew")
-        if not createnew:
+        pass_num += 1
+        if pass_num > max_passes:
+            print("max passes reached")
             break
-        print("creating new sale")
-        pyautogui.click(createnew)
-        wheat = getImgLoc("shop/wheattosell")
-        if not wheat:
+
+        emptySlots = []
+        try:
+            createnew_path = str(ASSETS_DIR / "shop/createnew/createnew.png")
+            for box in pyautogui.locateAllOnScreen(createnew_path, confidence=0.9):
+                x, y = pyautogui.center(box)
+                pos = (x / SCALE_FACTOR, y / SCALE_FACTOR)
+                if any(abs(pos[0] - p[0]) < 30 and abs(pos[1] - p[1]) < 30 for p in emptySlots):
+                    continue
+                emptySlots.append(pos)
+        except Exception:
+            pass
+
+        if not emptySlots:
+            print("no empty slots found")
             break
-        pyautogui.click(wheat)
-        maxprice = getImgLoc("shop/maxprice")
-        if maxprice:
-            pyautogui.click(maxprice)
-        sale = getImgLoc("shop/putonsale")
-        if sale:
+
+        print(f"found {len(emptySlots)} empty slots (pass {pass_num}/{max_passes})")
+        filled = 0
+
+        for i, slot in enumerate(emptySlots):
+            print(f"filling slot {i+1}/{len(emptySlots)}")
+            pyautogui.click(slot)
+            time.sleep(0.15)
+
+            if cachedClicks:
+                time.sleep(0.08)
+                pyautogui.click(cachedClicks["wheat"])
+                
+                time.sleep(0.08)
+                pyautogui.click(cachedClicks["maxprice"])
+
+                time.sleep(0.12)
+                pyautogui.click(cachedClicks["sale"])
+                
+                print("sale created")
+                filled += 1
+                continue
+
+            wheat = getImgLoc("shop/wheattosell")
+            if not wheat:
+                print("wheat not found, skipping slot")
+                continue
+            pyautogui.click(wheat)
+
+            maxprice = getImgLoc("shop/maxprice")
+            if maxprice:
+                pyautogui.click(maxprice)
+
+            sale = getImgLoc("shop/putonsale")
+            if not sale:
+                print("sale button not found, skipping slot")
+                continue
             pyautogui.click(sale)
-        print("sale created")
+
+            cachedClicks = {
+                "wheat": wheat,
+                "maxprice": maxprice,
+                "sale": sale
+            }
+            print("cached button positions for remaining slots")
+            print("sale created")
+            filled += 1
+
+        if filled == 0:
+            print("no sales created this pass")
+            break
 
     wheattoadvert = getImgLoc("shop/wheattoadvert")
     if wheattoadvert:
